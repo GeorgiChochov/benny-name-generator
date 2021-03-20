@@ -15,6 +15,7 @@ object Main {
 
     val getNewBenny = Routes.routes
 
+    println("Hello from Main")
     val port = sys.env.getOrElse("PORT", "8080").toInt
     val binding = Http().newServerAt("0.0.0.0", port).bind(getNewBenny)
     StdIn.readLine()

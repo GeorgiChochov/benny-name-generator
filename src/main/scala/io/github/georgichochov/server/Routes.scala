@@ -27,6 +27,7 @@ object Routes {
     path("benny") {
       get {
         complete {
+          println("Hello from /benny")
           val titleIndex = Random.nextInt(titles.size)
           val title = titles.view
             .slice(titleIndex, titleIndex + 1)
