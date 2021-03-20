@@ -12,3 +12,4 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion
 )
 enablePlugins(JavaAppPackaging)
+mainClass in Compile := Some("io.github.georgichochov.server.Main")

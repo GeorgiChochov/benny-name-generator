@@ -15,7 +15,8 @@ object Main {
 
     val getNewBenny = Routes.routes
 
-    val binding = Http().newServerAt("localhost", 8080).bind(getNewBenny)
+    val port = sys.env.getOrElse("PORT", "8080").toInt
+    val binding = Http().newServerAt("0.0.0.0", port).bind(getNewBenny)
     StdIn.readLine()
     binding.flatMap(_.unbind()).onComplete(_ => system.terminate())
   }
