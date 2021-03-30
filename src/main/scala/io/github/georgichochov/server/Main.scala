@@ -41,7 +41,7 @@ object Main {
       Await.result(setupFuture, Duration.Inf)
       println("Database ready")
     } catch {
-      case e => e.printStackTrace()
+      case e: Throwable => e.printStackTrace()
     }
 
     val routes = new Routes(lastNamesRepository, titlesRepository).routes
