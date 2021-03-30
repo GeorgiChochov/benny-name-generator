@@ -2,6 +2,7 @@ package io.github.georgichochov.server
 
 import akka.http.scaladsl.coding.Coders
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.model.headers.`Access-Control-Allow-Origin`
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives.{
   as,
@@ -11,7 +12,8 @@ import akka.http.scaladsl.server.Directives.{
   get,
   onComplete,
   path,
-  post
+  post,
+  respondWithHeaders
 }
 import akka.http.scaladsl.server.{Directives, Route}
 import io.github.georgichochov.core.BennyNamePermutator
@@ -48,7 +50,9 @@ class Routes(
             exception.printStackTrace()
             complete(StatusCodes.InternalServerError -> "Something went wrong")
           case Success(bennies) =>
-            complete(bennies)
+            respondWithHeaders(`Access-Control-Allow-Origin`.*) {
+              complete(bennies)
+            }
         }
       }
     },
@@ -59,7 +63,9 @@ class Routes(
             lastNamesRepository.addOne(new LastName() {
               override def lastName: String = name
             })
-            complete(HttpEntity(name))
+            respondWithHeaders(`Access-Control-Allow-Origin`.*) {
+              complete(HttpEntity(name))
+            }
           }
         }
       }
@@ -71,7 +77,9 @@ class Routes(
             titlesRepository.addOne(new Title() {
               override def title: String = newTitle
             })
-            complete(HttpEntity(newTitle))
+            respondWithHeaders(`Access-Control-Allow-Origin`.*) {
+              complete(HttpEntity(newTitle))
+            }
           }
         }
       }
