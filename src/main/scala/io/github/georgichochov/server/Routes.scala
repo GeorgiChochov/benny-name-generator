@@ -1,71 +1,77 @@
 package io.github.georgichochov.server
 
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
+import akka.http.scaladsl.coding.Coders
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives.{
   as,
   complete,
   decodeRequest,
   entity,
   get,
+  onComplete,
   path,
   post
 }
 import akka.http.scaladsl.server.{Directives, Route}
+import io.github.georgichochov.core.BennyNamePermutator
+import io.github.georgichochov.models.{LastName, Title}
+import io.github.georgichochov.persistence.repositories.{
+  LastNamesRepository,
+  TitlesRepository
+}
+import spray.json.DefaultJsonProtocol
 
-import scala.collection.mutable
-import scala.util.Random
+import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Random, Success}
 
-object Routes {
+class Routes(
+    lastNamesRepository: LastNamesRepository,
+    titlesRepository: TitlesRepository
+)(implicit ec: ExecutionContext)
+    extends SprayJsonSupport
+    with DefaultJsonProtocol {
 
-  private val defaultName = "Popplewell"
-  private val names = mutable.Set(defaultName)
-  private val defaultTitle = "Sir"
-  private val titles = mutable.Set(defaultTitle)
-  private val nameDynasty = mutable.Map(defaultName -> 1)
+  import io.github.georgichochov.bennycore.BennyName._
 
   val routes: Route = Directives.concat(
-    path("benny") {
+    path("bennies") {
       get {
-        complete {
-          println("Hello from /benny")
-          val titleIndex = Random.nextInt(titles.size)
-          val title = titles.view
-            .slice(titleIndex, titleIndex + 1)
-            .headOption
-            .getOrElse(defaultTitle)
-          val nameIndex = Random.nextInt(names.size)
-          val fancyName = names.view.slice(nameIndex, nameIndex + 1).head
-          val numeral = nameDynasty(fancyName)
-          nameDynasty.put(fancyName, numeral + 1)
-
-          HttpEntity(
-            ContentTypes.`application/json`,
-            s"""{
-             |  "title": "$title",
-             |  "fancyName": "$fancyName",
-             |  "numeral": $numeral
-             |}""".stripMargin
-          )
+        val eventualBennyNames = for {
+          titles <- titlesRepository.fetchAll
+          lastNames <- lastNamesRepository.fetchAll
+        } yield {
+          BennyNamePermutator.permutate(titles, lastNames)
+        }
+        onComplete(eventualBennyNames) {
+          case Failure(exception) =>
+            exception.printStackTrace()
+            complete(StatusCodes.InternalServerError -> "Something went wrong")
+          case Success(bennies) =>
+            complete(bennies)
         }
       }
     },
-    path("name") {
+    path("last-names") {
       post {
         decodeRequest {
           entity(as[String]) { name =>
-            names += name
-            nameDynasty.put(name, 1)
+            lastNamesRepository.addOne(new LastName() {
+              override def lastName: String = name
+            })
             complete(HttpEntity(name))
           }
         }
       }
     },
-    path("title") {
+    path("titles") {
       post {
         decodeRequest {
-          entity(as[String]) { title =>
-            titles += title
-            complete(HttpEntity(title))
+          entity(as[String]) { newTitle =>
+            titlesRepository.addOne(new Title() {
+              override def title: String = newTitle
+            })
+            complete(HttpEntity(newTitle))
           }
         }
       }
