@@ -20,20 +20,4 @@ object BennyNamePermutator {
     }
   }
 
-  def main(args: Array[String]): Unit = {
-    permutate(
-      Set("Mr.", "Dr.", "Marshall", "Judge").map(t =>
-        new Title {
-          override def title: String = t
-        }
-      ),
-      Set("Popplewell", "Samson", "Thistlebob", "Rosebottom").map(l =>
-        new LastName {
-          override def lastName: String = l
-        }
-      )
-    ).map(_.fullName)
-      .foreach(println)
-  }
-
 }
